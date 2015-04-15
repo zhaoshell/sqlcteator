@@ -1,47 +1,45 @@
 package com.github.sqlcteator;
 
-import static com.github.sqlcteator.util.StringUtil.isEmpty;
-import static com.github.sqlcteator.util.StringUtil.isNotEmpty;
+import static com.github.sqlcteator.util.StrUtil.isEmpty;
+import static com.github.sqlcteator.util.StrUtil.isNotEmpty;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
-import org.junit.Test;
-
 import com.github.sqlcteator.condition.And;
 import com.github.sqlcteator.condition.Condition;
 import com.github.sqlcteator.condition.Or;
 
 public class Query {
-	// private static final String ADDLINE = System.getProperty("line.separator");
-	private static final String ADDSPACE = " ";
-	private String table;
+
+	private String tableName;
 
 	private List<Condition> conditions;
 
-	private final StringBuilder sql;
-
-	public Query() {
-		this.sql = new StringBuilder();
+	private Query() {
 	}
 
-	private Query(String table) {
-		this.table = table;
-		this.sql = new StringBuilder();
+	private Query(String tableName) {
+		this.tableName = tableName;
 		this.conditions = new ArrayList<Condition>();
 	}
 
-	public static Query cteator(String table) {
+	public static Query table(String table) {
 		return new Query(table);
 	}
 
+	public String getTableName() {
+		return tableName;
+	}
+
 	/** 相等 */
-	public void eq(String propertyName, Object value) {
+	public Query eq(String propertyName, Object value) {
 		if (isEmpty(value))
-			return;
-		conditions.add(new And(propertyName, value));
+			return this;
+		conditions.add(new And(propertyName, "=", value));
+		return this;
 	}
 
 	/** 不相等 */
@@ -49,7 +47,7 @@ public class Query {
 		if (isEmpty(value)) {
 			return;
 		}
-
+		conditions.add(new And(propertyName, "!=", value));
 	}
 
 	/** 或 */
@@ -58,7 +56,7 @@ public class Query {
 			return;
 		if ((propertyName == null) || (propertyName.size() == 0))
 			return;
-		conditions.add(new Or(propertyName, value));
+		conditions.add(new Or(propertyName, "or", value));
 	}
 
 	/** 空 */
@@ -206,33 +204,16 @@ public class Query {
 		}
 	}
 
-	private StringBuilder append(String value) {
-		sql.append(value).append(ADDSPACE);
-		return sql;
+	public List<Condition> getConditions() {
+		return conditions;
 	}
 
-	public Query select() {
-		append("SELECT * FROM");
-		append(table);
-		append("WHERE 1=1");
-		for (Condition condition : conditions) {
-			append(condition.getCondition());
-		}
-		return this;
+	public String select() {
+		return SqlCteator.create(this).select().toString();
 	}
 
-	public String sql() {
-		return sql.toString();
+	public String insert() {
+		return SqlCteator.create(this).insert().toString();
 	}
 
-	@Test
-	public void main() {
-		List<String> or = new ArrayList<String>();
-		or.add("name");
-		// or.add("sex");
-		Query query = Query.cteator("nihao");
-		query.eq("name", "yangjian");
-		query.or(or, "lilei");
-		System.out.println(query.select().sql());
-	}
 }

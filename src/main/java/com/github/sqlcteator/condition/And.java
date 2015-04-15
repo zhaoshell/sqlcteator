@@ -2,8 +2,9 @@ package com.github.sqlcteator.condition;
 
 public class And extends Condition {
 
-	public And(String propertyName, Object value) {
+	public And(String propertyName, String operator, Object value) {
 		this.column = propertyName;
+		this.operator = operator;
 		this.value = value;
 	}
 
@@ -26,6 +27,11 @@ public class And extends Condition {
 	public String getCondition() {
 		return new StringBuilder(getPrefix()).append(getColumn()).append(" = '").append(getValue()).append("' ")
 				.toString();
+	}
+
+	@Override
+	public String getOperator() {
+		return operator;
 	}
 
 }

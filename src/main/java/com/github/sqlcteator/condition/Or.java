@@ -2,14 +2,15 @@ package com.github.sqlcteator.condition;
 
 import java.util.List;
 
-import com.github.sqlcteator.util.StringUtil;
+import com.github.sqlcteator.util.StrUtil;
 
 public class Or extends Condition {
 
 	List<String> propertyName;
 
-	public Or(List<String> propertyName, Object value) {
+	public Or(List<String> propertyName, String operator, Object value) {
 		this.propertyName = propertyName;
+		this.operator = operator;
 		this.value = value;
 	}
 
@@ -30,7 +31,7 @@ public class Or extends Condition {
 
 	@Override
 	public String getCondition() {
-		if (StringUtil.isEmpty(propertyName)) {
+		if (StrUtil.isEmpty(propertyName)) {
 			return "";
 		}
 		StringBuilder sql = new StringBuilder(getPrefix());
@@ -48,5 +49,10 @@ public class Or extends Condition {
 			sql.append(" ) ");
 		}
 		return sql.toString();
+	}
+
+	@Override
+	public String getOperator() {
+		return operator;
 	}
 }

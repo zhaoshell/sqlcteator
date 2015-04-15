@@ -28,4 +28,10 @@ public class Null extends Condition {
 		return value;
 	}
 
+	@Override
+	public String getOperator() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

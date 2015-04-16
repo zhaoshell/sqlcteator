@@ -14,6 +14,12 @@ public class Or extends Condition {
 		this.value = value;
 	}
 
+	public Or(String propertyName, String operator, Object value) {
+		this.column = propertyName;
+		this.operator = operator;
+		this.value = value;
+	}
+
 	@Override
 	public String getColumn() {
 		return column;
@@ -34,13 +40,13 @@ public class Or extends Condition {
 		if (StrUtil.isEmpty(propertyName)) {
 			return "";
 		}
-		StringBuilder sql = new StringBuilder(getPrefix());
+		StringBuilder sql = new StringBuilder();
 		int size = propertyName.size();
 		if (size > 1) {
 			sql.append(" ( ");
 		}
 		for (int i = 0; i < size; i++) {
-			sql.append(" ").append(propertyName.get(i)).append(" = '").append(getValue()).append("'");
+			sql.append(" ").append(propertyName.get(i)).append(" = ?");
 			if (i < size - 1) {
 				sql.append(" AND ");
 			}

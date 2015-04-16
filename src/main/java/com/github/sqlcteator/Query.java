@@ -16,14 +16,14 @@ public class Query {
 
 	private String tableName;
 
-	private List<Condition> conditions;
+	private List<Condition> whereConditions;
 
 	private Query() {
 	}
 
 	private Query(String tableName) {
 		this.tableName = tableName;
-		this.conditions = new ArrayList<Condition>();
+		this.whereConditions = new ArrayList<Condition>();
 	}
 
 	public static Query table(String table) {
@@ -38,7 +38,7 @@ public class Query {
 	public Query eq(String propertyName, Object value) {
 		if (isEmpty(value))
 			return this;
-		conditions.add(new And(propertyName, "=", value));
+		whereConditions.add(new And(propertyName, "=", value));
 		return this;
 	}
 
@@ -47,7 +47,7 @@ public class Query {
 		if (isEmpty(value)) {
 			return;
 		}
-		conditions.add(new And(propertyName, "!=", value));
+		whereConditions.add(new And(propertyName, "!=", value));
 	}
 
 	/** 或 */
@@ -56,7 +56,15 @@ public class Query {
 			return;
 		if ((propertyName == null) || (propertyName.size() == 0))
 			return;
-		conditions.add(new Or(propertyName, "or", value));
+		whereConditions.add(new Or(propertyName, "=", value));
+	}
+
+	public void or(String propertyName, Object value) {
+		if (isEmpty(propertyName))
+			return;
+		if (isEmpty(value))
+			return;
+		whereConditions.add(new Or(propertyName, "=", value));
 	}
 
 	/** 空 */
@@ -204,8 +212,8 @@ public class Query {
 		}
 	}
 
-	public List<Condition> getConditions() {
-		return conditions;
+	public List<Condition> getWhereConditions() {
+		return whereConditions;
 	}
 
 	public String select() {

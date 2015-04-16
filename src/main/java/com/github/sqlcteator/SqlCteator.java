@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.List;
 
 import com.github.sqlcteator.condition.Condition;
+import com.github.sqlcteator.condition.Or;
 import com.github.sqlcteator.util.StrUtil;
 
 /**
@@ -119,17 +120,17 @@ public class SqlCteator {
 
 		final StringBuilder placeHolder = new StringBuilder(") VALUES (");
 
-		for (Condition condition : query.getConditions()) {
-			// 非第一个参数，追加逗号
-			if (paramValues.size() > 0) {
-				sql.append(", ");
-				placeHolder.append(", ");
-			}
-
-			sql.append(condition.getColumn());
-			placeHolder.append("?");
-			paramValues.add(condition.getValue());
-		}
+		// for (Condition condition : query.getConditions()) {
+		// // 非第一个参数，追加逗号
+		// if (paramValues.size() > 0) {
+		// sql.append(", ");
+		// placeHolder.append(", ");
+		// }
+		//
+		// sql.append(condition.getColumn());
+		// placeHolder.append("?");
+		// paramValues.add(condition.getValue());
+		// }
 		sql.append(placeHolder.toString()).append(")");
 
 		return this;
@@ -163,13 +164,13 @@ public class SqlCteator {
 		// 验证
 		// DbUtil.validateEntity(query);
 		sql.append("UPDATE ").append(query.getTableName()).append(" SET ");
-		for (Condition condition : query.getConditions()) {
-			if (paramValues.size() > 0) {
-				sql.append(", ");
-			}
-			sql.append(condition.getColumn()).append(" = ? ");
-			paramValues.add(condition.getValue());
-		}
+		// for (Condition condition : query.getWhereConditions()) {
+		// if (paramValues.size() > 0) {
+		// sql.append(", ");
+		// }
+		// sql.append(condition.getColumn()).append(" = ? ");
+		// paramValues.add(condition.getValue());
+		// }
 		return this;
 	}
 
@@ -258,7 +259,7 @@ public class SqlCteator {
 	 * @return 自己
 	 */
 	public SqlCteator where() {
-		List<Condition> conditions = query.getConditions();
+		List<Condition> conditions = query.getWhereConditions();
 		if (StrUtil.isNotEmpty(conditions)) {
 			sql.append(" WHERE ").append(buildCondition(conditions));
 		}
@@ -426,27 +427,25 @@ public class SqlCteator {
 	 */
 
 	private String buildCondition(List<Condition> conditions) {
-		if (StrUtil.isEmpty(conditions)) {
-			return StrUtil.EMPTY;
-		}
-		final StringBuilder conditionStr = new StringBuilder();
-		boolean isFirst = true;
+		final StringBuilder conditionStr = new StringBuilder("1=1 ");
 		for (Condition condition : conditions) {
-			// 添加逻辑运算符
-			if (isFirst) {
-				isFirst = false;
-			} else {
-				conditionStr.append(StrUtil.SPACE).append(condition.getPrefix()).append(StrUtil.SPACE);
-			}
-			// 添加条件表达式
-			conditionStr.append(condition.getColumn()).append(StrUtil.SPACE).append(condition.getOperator());
-			if (condition.isPlaceHolder()) {
-				// 使用条件表达式占位符
-				conditionStr.append(" ?");
+			conditionStr.append(StrUtil.SPACE).append(condition.getPrefix()).append(StrUtil.SPACE);
+			if (condition instanceof Or) {
+				Or or = (Or) condition;
+				// 添加条件表达式
+				conditionStr.append(or.getCondition());
 				paramValues.add(condition.getValue());
 			} else {
-				// 直接使用条件值
-				conditionStr.append(condition.getValue());
+				// 添加条件表达式
+				conditionStr.append(condition.getColumn()).append(StrUtil.SPACE).append(condition.getOperator());
+				if (condition.isPlaceHolder()) {
+					// 使用条件表达式占位符
+					conditionStr.append(" ?");
+					paramValues.add(condition.getValue());
+				} else {
+					// 直接使用条件值
+					conditionStr.append(condition.getValue());
+				}
 			}
 		}
 		return conditionStr.toString();

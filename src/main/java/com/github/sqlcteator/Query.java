@@ -108,6 +108,7 @@ public class Query {
 			return;
 		if (value.indexOf("%") < 0)
 			value = "%" + value + "%";
+		whereConditions.add(new And(propertyName, "like", value));
 	}
 
 	/**

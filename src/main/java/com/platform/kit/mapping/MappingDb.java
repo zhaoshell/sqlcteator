@@ -42,6 +42,10 @@ public class MappingDb {
 		this.mapUnderscoreToCamelCase = mapUnderscoreToCamelCase;
 	}
 
+	public boolean isMapUnderscoreToCamelCase() {
+		return mapUnderscoreToCamelCase;
+	}
+
 	/**
 	 * 将对象属性转换对应的数据库字段
 	 * 
@@ -53,7 +57,7 @@ public class MappingDb {
 	 */
 	public List<String> getColumns() {
 		List<String> columns = new ArrayList<String>();
-		Map<String, MappingField> map = Mapping.m.getFieldMap(clazz);
+		Map<String, MappingField> map = Mapping.m.getFieldMap(this.clazz);
 		Set<String> keySet = map.keySet();
 		String keyName = null;
 		MappingField objField = null;
@@ -75,23 +79,18 @@ public class MappingDb {
 	}
 
 	public Object[] getValues() {
-		// 被转换对象的field Map
-		Map<String, MappingField> map = Mapping.m.getFieldMap(clazz);
-		Set<String> keySet = map.keySet();
+		
+		// 被转换对象的field Map，获取属性对应的值
+		this.setMapUnderscoreToCamelCase(false);
+		
+		Map<String, MappingField> map = Mapping.m.getFieldMap(this.clazz);
+		List<String> columns = getColumns();
+		Object[] values = new Object[columns.size()];
 		Object fieldValue = null;
 		MappingField objField = null;
-		int length = 0 ;
-		for (String key : keySet) {
-			objField = map.get(map.get(key).getKeyName());
-			if (!objField.isMapping()) {
-				continue;
-			}
-			length++;
-		}
-		Object[] values = new Object[length];
 		try {
 			int i = 0;
-			for (String key : keySet) {
+			for (String key : columns) {
 				// 被转化对象的field信息。
 				objField = map.get(map.get(key).getKeyName());
 				if (!objField.isMapping()) {
@@ -99,11 +98,9 @@ public class MappingDb {
 				}
 				if (objField != null) {
 					// 获得被转化对象的该字段的值。
-					fieldValue = objField.getFieldValue(obj);
+					fieldValue = objField.getFieldValue(this.obj);
 				}
-				if (fieldValue != null) {
-					values[i++] = fieldValue;
-				}
+				values[i++] = fieldValue;
 			}
 		} catch (Exception e) {
 			throw new RuntimeException(e);

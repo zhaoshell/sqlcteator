@@ -1,6 +1,8 @@
 package com.github.sqlcteator;
 
+import java.sql.Timestamp;
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
@@ -43,14 +45,50 @@ public class Insert {
 		this.clazz = clazz;
 		this.mappingDb = new MappingDb(this.clazz);
 		this.table = MappingDb.camelToUnderscore(this.clazz.getSimpleName());
+		if (this.mappingDb.isMapUnderscoreToCamelCase()) {
+			this.table = MappingDb.camelToUnderscore(this.clazz.getSimpleName());
+		} else {
+			this.table = this.clazz.getSimpleName();
+		}
 		this.columns.addAll(this.mappingDb.getColumns());
 	}
-	
+
+	public Insert(Class<?> clazz, boolean mapUnderscoreToCamelCase) {
+		this();
+		this.clazz = clazz;
+		this.mappingDb = new MappingDb(this.clazz);
+		this.mappingDb.setMapUnderscoreToCamelCase(mapUnderscoreToCamelCase);
+		if (mapUnderscoreToCamelCase) {
+			this.table = MappingDb.camelToUnderscore(this.clazz.getSimpleName());
+		} else {
+			this.table = this.clazz.getSimpleName();
+		}
+		this.columns.addAll(this.mappingDb.getColumns());
+	}
+
 	public Insert(Object obj) {
 		this();
 		this.clazz = obj.getClass();
 		this.mappingDb = new MappingDb(obj);
-		this.table = MappingDb.camelToUnderscore(this.clazz.getSimpleName());
+		if (this.mappingDb.isMapUnderscoreToCamelCase()) {
+			this.table = MappingDb.camelToUnderscore(this.clazz.getSimpleName());
+		} else {
+			this.table = this.clazz.getSimpleName();
+		}
+		this.columns.addAll(this.mappingDb.getColumns());
+		this.values.add(this.mappingDb.getValues());
+	}
+
+	public Insert(Object obj, boolean mapUnderscoreToCamelCase) {
+		this();
+		this.clazz = obj.getClass();
+		this.mappingDb = new MappingDb(obj);
+		this.mappingDb.setMapUnderscoreToCamelCase(mapUnderscoreToCamelCase);
+		if (mapUnderscoreToCamelCase) {
+			this.table = MappingDb.camelToUnderscore(this.clazz.getSimpleName());
+		} else {
+			this.table = this.clazz.getSimpleName();
+		}
 		this.columns.addAll(this.mappingDb.getColumns());
 		this.values.add(this.mappingDb.getValues());
 	}
@@ -157,7 +195,7 @@ public class Insert {
 		}
 		return columns.toArray();
 	}
-	
+
 	public Object[] getValues() {
 		int length = 0;
 		for (Object[] v : values) {
@@ -188,8 +226,11 @@ public class Insert {
 		for (int i = 0; i < result.length; i++) {
 			if (objs[i] instanceof String) {
 				result[i] = "'" + objs[i].toString() + "'";
+			} else if (objs[i] instanceof Date) {
+				Date date = (Date)objs[i];
+				result[i] = "'" + new Timestamp(date.getTime()) + "'";
 			} else {
-				result[i] = objs[i].toString();
+				result[i] = objs[i]==null?"null":objs[i].toString();
 			}
 		}
 		return "(" + StringUtils.join(result, ", ") + ")";

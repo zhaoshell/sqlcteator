@@ -14,8 +14,8 @@ import org.omg.CORBA.portable.ApplicationException;
 import com.platform.kit.mapping.annotations.Fields;
 
 /**
- * @comment 转换对象，将Map转换成对象或者将对象转换成另外一个对象。可用于PO到VO的相互转换<br/>
- *          新对象的成员变量名称要与Map的key或者被转换对象的成员变量名称一样。 如果不一样，可以通过 com.platform.kit.mapping.annotations.Fields
+ * @comment 转换对象将Map转换成对象或者将对象转换成另外一个对象。可用于PO到VO的相互转换<br/>
+ *          新对象的成员变量名称要与Map的key或者被转换对象的成员变量名称一样。 如果不一样可以通过 com.platform.kit.mapping.annotations.Fields
  *          标注来注释新对象的成员对应那些名称。 可以参看com.platform.kit.mapping.mapping.exam包中的 MapperObj2 和 OldObject_2.<br/>
  * <br/>
  *          使用方式：<br/>
@@ -27,7 +27,6 @@ import com.platform.kit.mapping.annotations.Fields;
  * @date 2013-7-10 下午5:11:47
  * @version 1.0.1
  */
-@SuppressWarnings("unchecked")
 public class Mapping {
 
 	public final static Mapping m = new Mapping();
@@ -43,7 +42,7 @@ public class Mapping {
 	}
 
 	/**
-	 * 通过该构造方法，可以提前注册各个转换对象及被转换对象的class。如果调用无参构造方法，不进行提前注册，那么，将会在具体转换时，对对象的class进行注册。
+	 * 通过该构造方法可以提前注册各个转换对象及被转换对象的class。如果调用无参构造方法不进行提前注册那么将会在具体转换时对对象的class进行注册。
 	 * 
 	 * @param clazzs
 	 */
@@ -59,12 +58,12 @@ public class Mapping {
 	 * 将Map对象转换成指定对象
 	 * 
 	 * @param clazz
-	 *            ，指定的转换后的对象。
+	 *            指定的转换后的对象。
 	 * @param map
-	 *            ，被转换信息的map。
+	 *            被转换信息的map。
 	 * @return clazz参数指定的对象。
 	 * @exception ApplicationException
-	 *                ，转换失败。
+	 *                转换失败。
 	 * @Author wangshuo
 	 * @since 1.0.0
 	 */
@@ -88,12 +87,12 @@ public class Mapping {
 	 * 将List转换成指定对象的List。
 	 * 
 	 * @param clazz
-	 *            ，指定的转换后的对象。
+	 *            指定的转换后的对象。
 	 * @param mapList
-	 *            ，List集合，每个对象为map。每个map包含具体的对象信息。
+	 *            List集合每个对象为map。每个map包含具体的对象信息。
 	 * @return List。list内每个对象元素为clazz参数指定的对象。
 	 * @exception ApplicationException
-	 *                ，转换失败。
+	 *                转换失败。
 	 * @Author wangshuo
 	 * @since 1.0.1
 	 */
@@ -126,12 +125,12 @@ public class Mapping {
 	 * 将对象转换成指定的对象。
 	 * 
 	 * @param clazz
-	 *            ，指定转换成的对象。
+	 *            指定转换成的对象。
 	 * @param obj
-	 *            ，被转换的对象。
+	 *            被转换的对象。
 	 * @return clazz参数指定转换成的对象。
 	 * @exception ApplicationException
-	 *                ，转换失败。
+	 *                转换失败。
 	 * @Author wangshuo
 	 * @since 1.0.0
 	 */
@@ -157,12 +156,12 @@ public class Mapping {
 	 * 将原始数据的List转换成指定对象的List。
 	 * 
 	 * @param clazz
-	 *            ，指定转换成的对象。
+	 *            指定转换成的对象。
 	 * @param objList
-	 *            ，原始数据List集合。
+	 *            原始数据List集合。
 	 * @return List。list内每个对象元素为clazz参数指定的对象。
 	 * @exception ApplicationException
-	 *                ，转换失败。
+	 *                转换失败。
 	 * @Author wangshuo
 	 * @since 1.0.1
 	 */
@@ -194,6 +193,7 @@ public class Mapping {
 		return ret;
 	}
 
+	@SuppressWarnings("unchecked")
 	private <E extends Serializable> E convertObjectFromMap(Collection<MappingField> col, Constructor<?> c,
 			Map<String, Object> map) {
 		if (map == null) {
@@ -216,6 +216,7 @@ public class Mapping {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	private <E extends Serializable> E convertObjectFromObject(Collection<MappingField> col, Constructor<?> c,
 			Map<String, MappingField> objFieldMap, Object obj) {
 		if (obj == null) {

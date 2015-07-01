@@ -6,6 +6,7 @@ import java.util.Date;
 
 import org.junit.Test;
 
+import com.github.sqlcteator.test.po.WhPickingWall;
 import com.platform.kit.mapping.exam.MapperObj;
 import com.platform.kit.mapping.exam.MapperObj2;
 
@@ -38,6 +39,7 @@ public class InsertQueryTest {
 			System.out.println(value);
 		}
 	}
+	
 	@Test
 	public void createQueryColumnsAndValues() throws Exception {
 		MapperObj mapperObj = new MapperObj();

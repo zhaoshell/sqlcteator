@@ -433,7 +433,7 @@ public class SqlCteator {
 			if (condition instanceof Or) {
 				Or or = (Or) condition;
 				// 添加条件表达式
-				conditionStr.append(or.getCondition());
+				//conditionStr.append(or.getCondition());
 				paramValues.add(condition.getValue());
 			} else {
 				// 添加条件表达式

@@ -14,6 +14,21 @@ public class InsertQueryTest {
 	private static final String NEW_LINE = System.getProperty("line.separator");
 
 	@Test
+	public void createInsert() {
+		long start = System.currentTimeMillis();// Instant.now().toEpochMilli();
+		Insert query = null;
+		WhPickingWall whPickingWall = null;
+		for (int i = 0; i < 10000; i++) {
+			whPickingWall = new WhPickingWall();
+			whPickingWall.setWallNo(System.currentTimeMillis() + "");
+			query = new Insert(whPickingWall);
+			query.toPrepareStatementString();
+		}
+		long end = System.currentTimeMillis();// Instant.now().toEpochMilli();
+		System.out.println(end - start);
+	}
+
+	@Test
 	public void createQueryColumnsAndValues2() throws Exception {
 		MapperObj2 mapperObj = new MapperObj2();
 		mapperObj.setCreateDate(new Date());
@@ -39,7 +54,7 @@ public class InsertQueryTest {
 			System.out.println(value);
 		}
 	}
-	
+
 	@Test
 	public void createQueryColumnsAndValues() throws Exception {
 		MapperObj mapperObj = new MapperObj();
@@ -48,7 +63,7 @@ public class InsertQueryTest {
 		mapperObj.setId(1222);
 		mapperObj.setName("中国");
 		// Given
-		//Insert query = new Insert(MapperObj.class).values(1, "foo", 30,"");
+		// Insert query = new Insert(MapperObj.class).values(1, "foo", 30,"");
 		Insert query = new Insert(mapperObj);
 		// When
 		String sql = query.toPrepareStatementString();

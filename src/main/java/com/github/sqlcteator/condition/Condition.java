@@ -14,15 +14,10 @@ public abstract class Condition {
 	/** 是否使用条件值占位符 */
 	private boolean isPlaceHolder = true;
 
-	public abstract String getCondition();
-
-	public abstract String getPrefix();
-
 	public abstract String getColumn();
-
-	public abstract Object getValue();
-
+	public abstract String getPrefix();
 	public abstract String getOperator();
+	public abstract Object getValue();
 
 	public boolean isPlaceHolder() {
 		return isPlaceHolder;

@@ -1,21 +1,16 @@
 package com.github.sqlcteator.condition;
 
 public class Null extends Condition {
+	private Boolean isNull = false;
 
 	public Null(String propertyName, Boolean isNull) {
 		this.column = propertyName;
-		this.value = isNull;
-	}
-
-	@Override
-	public String getCondition() {
-		// TODO Auto-generated method stub
-		return null;
+		this.isNull = isNull;
 	}
 
 	@Override
 	public String getPrefix() {
-		return null;
+		return " and ";
 	}
 
 	@Override
@@ -25,13 +20,16 @@ public class Null extends Condition {
 
 	@Override
 	public Object getValue() {
-		return value;
+		if (isNull) {
+			return "is null";
+		}else {
+			return "is not null";
+		}
 	}
 
 	@Override
 	public String getOperator() {
-		// TODO Auto-generated method stub
-		return null;
+		return this.operator;
 	}
 
 }

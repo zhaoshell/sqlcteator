@@ -2,7 +2,7 @@ package com.github.sqlcteator.condition;
 
 import java.util.List;
 
-import com.github.sqlcteator.util.StrUtil;
+import org.apache.commons.lang3.StringUtils;
 
 public class Or extends Condition {
 
@@ -22,12 +22,10 @@ public class Or extends Condition {
 
 	@Override
 	public String getColumn() {
+		if (propertyName != null && propertyName.size() > 0) {
+			return "";
+		}
 		return column;
-	}
-
-	@Override
-	public Object getValue() {
-		return value;
 	}
 
 	@Override
@@ -36,29 +34,32 @@ public class Or extends Condition {
 	}
 
 	@Override
-	public String getCondition() {
-		if (StrUtil.isEmpty(propertyName)) {
-			return "";
-		}
-		StringBuilder sql = new StringBuilder();
-		int size = propertyName.size();
-		if (size > 1) {
-			sql.append(" ( ");
-		}
-		for (int i = 0; i < size; i++) {
-			sql.append(" ").append(propertyName.get(i)).append(" = ?");
-			if (i < size - 1) {
-				sql.append(" AND ");
+	public String getValue() {
+		if (propertyName != null && propertyName.size() > 0) {
+			StringBuilder sql = new StringBuilder();
+			int size = propertyName.size();
+			if (size > 1) {
+				sql.append(" ( ");
 			}
+			for (int i = 0; i < size; i++) {
+				sql.append(" ").append(propertyName.get(i)).append(" = ?");
+				if (i < size - 1) {
+					sql.append(" AND ");
+				}
+			}
+			if (size > 1) {
+				sql.append(" ) ");
+			}
+			return sql.toString();
 		}
-		if (size > 1) {
-			sql.append(" ) ");
-		}
-		return sql.toString();
+		return " ? ";
 	}
 
 	@Override
 	public String getOperator() {
-		return operator;
+		if (propertyName != null && propertyName.size() > 0) {
+			return "";
+		}
+		return StringUtils.join(" ", this.operator, " ");
 	}
 }

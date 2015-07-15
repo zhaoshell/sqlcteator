@@ -131,13 +131,13 @@ public class Insert {
 
 	public String toString() {
 		terminate();
-		log.log(Level.INFO, "\n" + sql.toString());
+		//log.log(Level.INFO, "\n" + sql.toString());
 		return sql.toString();
 	}
 
 	public String toPrepareStatementString() {
 		terminatePrepareStatement();
-		log.log(Level.INFO, "\n" + sql.toString());
+		//log.log(Level.INFO, "\n" + sql.toString());
 		return sql.toString();
 	}
 

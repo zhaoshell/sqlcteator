@@ -18,9 +18,9 @@ public class TestSqlCteator {
 		query.notEq("id", "1");
 		// query.or("nickname", "yang");
 		query.or(or, "yang");
-		String sql = query.select();
-		System.out.println(sql);
-		sql = query.insert();
-		System.out.println(sql);
+//		String sql = query.select();
+//		System.out.println(sql);
+//		sql = query.insert();
+//		System.out.println(sql);
 	}
 }

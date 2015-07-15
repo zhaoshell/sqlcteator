@@ -2,28 +2,72 @@ package com.github.sqlcteator;
 
 import static com.github.sqlcteator.util.StrUtil.isEmpty;
 import static com.github.sqlcteator.util.StrUtil.isNotEmpty;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
+
+import org.apache.commons.lang3.StringUtils;
 
 import com.github.sqlcteator.condition.And;
 import com.github.sqlcteator.condition.Condition;
 import com.github.sqlcteator.condition.Or;
+import com.google.common.collect.Lists;
 
 public class Query {
 
+	public static void main(String[] args) {
+		
+		List<String>  columns= Lists.newArrayList("status","wall_code");
+		Query query = new Query("wh_picking_wall");
+		query.columns("wall_no", "id");
+		query.eq("status", "PickingWallStatus_2");
+		query.like("wall_code", "nihao");
+		query.or(columns, "PickingWallStatus_2");
+		query.isNotNull("status");
+		String sql = query.toString();
+		System.out.println(sql);
+	}
+
+	@Override
+	public String toString() {
+		if (isEmpty(columns)) {
+			sql.append("*");
+		} else {
+			sql.append(StringUtils.join(columns, ", "));
+		}
+		sql.append(" from ").append(tableName);
+		sql.append(" where 1=1 ");
+		for (Condition condition : whereConditions) {
+			sql.append(condition.getPrefix());
+			sql.append(condition.getColumn());
+			sql.append(condition.getOperator());
+			sql.append(condition.getValue());
+		}
+		return sql.toString();
+	}
+
 	private String tableName;
 
-	private List<Condition> whereConditions;
+	private final List<String> columns;
+
+	private final StringBuilder sql;
+
+	private final List<Object> parameters;
+
+	private final List<Condition> whereConditions;
 
 	private Query() {
+		this.sql = new StringBuilder("select ");
+		this.columns = new ArrayList<String>();
+		this.whereConditions = new ArrayList<Condition>();
+		this.parameters = new LinkedList<Object>();
 	}
 
 	private Query(String tableName) {
+		this();
 		this.tableName = tableName;
-		this.whereConditions = new ArrayList<Condition>();
 	}
 
 	public static Query table(String table) {
@@ -34,20 +78,28 @@ public class Query {
 		return tableName;
 	}
 
+	public Query columns(String... column) {
+		for (String col : column) {
+			columns.add(col);
+		}
+		return this;
+	}
+
 	/** 相等 */
 	public Query eq(String propertyName, Object value) {
 		if (isEmpty(value))
 			return this;
-		whereConditions.add(new And(propertyName, "=", value));
+		whereConditions.add(new And(propertyName, "=", value, parameters));
 		return this;
 	}
 
 	/** 不相等 */
-	public void notEq(String propertyName, Object value) {
+	public Query notEq(String propertyName, Object value) {
 		if (isEmpty(value)) {
-			return;
+			return this;
 		}
-		whereConditions.add(new And(propertyName, "!=", value));
+		whereConditions.add(new And(propertyName, "!=", value, parameters));
+		return this;
 	}
 
 	/** 或 */
@@ -107,8 +159,8 @@ public class Query {
 		if (isEmpty(value))
 			return;
 		if (value.indexOf("%") < 0)
-			value = "%" + value + "%";
-		whereConditions.add(new And(propertyName, "like", value));
+			value = StringUtils.join("'%" , value , "%'");
+		whereConditions.add(new And(propertyName, "like", value, parameters));
 	}
 
 	/**
@@ -215,14 +267,6 @@ public class Query {
 
 	public List<Condition> getWhereConditions() {
 		return whereConditions;
-	}
-
-	public String select() {
-		return SqlCteator.create(this).select().toString();
-	}
-
-	public String insert() {
-		return SqlCteator.create(this).insert().toString();
 	}
 
 }

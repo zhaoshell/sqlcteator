@@ -1,9 +1,9 @@
-package com.platform.kit.mapping.exam;
+package com.github.sqlcteator.mapping.exam;
 
 import java.io.Serializable;
 import java.util.Date;
 
-import com.platform.kit.mapping.annotations.Fields;
+import com.github.sqlcteator.mapping.annotations.Fields;
 
 public class MapperObj2 implements Serializable {
 

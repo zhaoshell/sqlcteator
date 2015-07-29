@@ -1,8 +1,8 @@
-package com.platform.kit.mapping.exam;
+package com.github.sqlcteator.mapping.exam;
 
 import java.io.Serializable;
 
-import com.platform.kit.mapping.annotations.Fields;
+import com.github.sqlcteator.mapping.annotations.Fields;
 
 public class OldObject_2 implements Serializable {
 

@@ -2,271 +2,569 @@ package com.github.sqlcteator;
 
 import static com.github.sqlcteator.util.StrUtil.isEmpty;
 import static com.github.sqlcteator.util.StrUtil.isNotEmpty;
+
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.commons.dbutils.BasicRowProcessor;
+import org.apache.commons.dbutils.GenerousBeanProcessor;
+import org.apache.commons.dbutils.RowProcessor;
+import org.apache.commons.dbutils.handlers.BeanHandler;
+import org.apache.commons.dbutils.handlers.BeanListHandler;
+import org.apache.commons.dbutils.handlers.ColumnListHandler;
+import org.apache.commons.dbutils.handlers.MapHandler;
+import org.apache.commons.dbutils.handlers.MapListHandler;
+import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.lang3.StringUtils;
 
-import com.github.sqlcteator.condition.And;
-import com.github.sqlcteator.condition.Condition;
-import com.github.sqlcteator.condition.Or;
-import com.google.common.collect.Lists;
+import com.github.sqlcteator.condition.OrderBy;
+import com.github.sqlcteator.mapping.MappingDb;
+import com.github.sqlcteator.util.StrUtil;
+import com.google.common.base.Joiner;
 
+/**
+ * SQL SELECT查询器
+ *
+ * @Author 杨健/YangJian
+ * @Date 2015年7月16日 下午3:21:32
+ */
 public class Query {
 
-	public static void main(String[] args) {
-		
-		List<String>  columns= Lists.newArrayList("status","wall_code");
-		Query query = new Query("wh_picking_wall");
-		query.columns("wall_no", "id");
-		query.eq("status", "PickingWallStatus_2");
-		query.like("wall_code", "nihao");
-		query.or(columns, "PickingWallStatus_2");
-		query.isNotNull("status");
-		String sql = query.toString();
-		System.out.println(sql);
+	private final StringBuilder sql;
+	private final List<Object> parameters;
+	private final List<OrderBy> orders;
+	private boolean isDubeg = true;
+	private Class<?> clazz;
+
+	public void setDubeg(boolean isDubeg) {
+		this.isDubeg = isDubeg;
+	}
+
+	public Query() {
+		this.sql = new StringBuilder();
+		this.orders = new ArrayList<OrderBy>();
+		this.parameters = new ArrayList<Object>();
+	}
+
+	public Query(Class<?> clazz) {
+		this.clazz = clazz;
+		String table = MappingDb.camelToUnderscore(clazz.getSimpleName());
+		this.sql = new StringBuilder(" select * from ").append(table).append(" where 1=1 ");
+		this.orders = new ArrayList<OrderBy>();
+		this.parameters = new ArrayList<Object>();
+	}
+
+	public Query(String sql) {
+		this.sql = new StringBuilder(sql);
+		this.orders = new ArrayList<OrderBy>();
+		this.parameters = new ArrayList<Object>();
+	}
+
+	public static Query selectAll(String table) {
+		return new Query(" select * from ").append(table).append(" where 1=1 ");
+	}
+
+	public static Query select(String table, String... columnNames) {
+		Query sql = new Query(" select ");
+		sql.append(StringUtils.join(columnNames, ","));
+		sql.append(" from ");
+		sql.append(table);
+		sql.append(" where 1=1 ");
+		return sql;
+	}
+
+	/**
+	 * 直接拼接sql片段
+	 * 
+	 * @param segment
+	 *            sql片段
+	 * @return
+	 * @return Query
+	 * @Author 杨健/YangJian
+	 * @Date 2015年7月16日 上午10:52:11
+	 * @Version 1.0.0
+	 */
+	public Query append(String segment) {
+		if (isEmpty(segment))
+			return this;
+
+		sql.append(segment);
+		return this;
 	}
 
 	@Override
 	public String toString() {
-		if (isEmpty(columns)) {
-			sql.append("*");
-		} else {
-			sql.append(StringUtils.join(columns, ", "));
-		}
-		sql.append(" from ").append(tableName);
-		sql.append(" where 1=1 ");
-		for (Condition condition : whereConditions) {
-			sql.append(condition.getPrefix());
-			sql.append(condition.getColumn());
-			sql.append(condition.getOperator());
-			sql.append(condition.getValue());
-		}
 		return sql.toString();
 	}
 
-	private String tableName;
-
-	private final List<String> columns;
-
-	private final StringBuilder sql;
-
-	private final List<Object> parameters;
-
-	private final List<Condition> whereConditions;
-
-	private Query() {
-		this.sql = new StringBuilder("select ");
-		this.columns = new ArrayList<String>();
-		this.whereConditions = new ArrayList<Condition>();
-		this.parameters = new LinkedList<Object>();
+	public List<Object> getParameters() {
+		return parameters;
 	}
 
-	private Query(String tableName) {
-		this();
-		this.tableName = tableName;
-	}
-
-	public static Query table(String table) {
-		return new Query(table);
-	}
-
-	public String getTableName() {
-		return tableName;
-	}
-
-	public Query columns(String... column) {
-		for (String col : column) {
-			columns.add(col);
-		}
+	public Query setParameters(Object parameter) {
+		if (isEmpty(parameter))
+			return this;
+		parameters.add(parameter);
 		return this;
 	}
 
-	/** 相等 */
-	public Query eq(String propertyName, Object value) {
+	public Query setParameters(List<Object> parameter) {
+		if (isEmpty(parameter))
+			return this;
+		parameters.addAll(parameter);
+		return this;
+	}
+
+	/**
+	 * 拼接SQL查询条件（and）
+	 * 
+	 * @param sql
+	 * @param params
+	 *            保存参数值
+	 * @param columnName
+	 *            字段
+	 * @param value
+	 *            参数值
+	 * @return Query
+	 * @Author 杨健/YangJian
+	 * @Date 2015年6月30日 上午11:46:48
+	 * @Version 1.0.0
+	 */
+	public Query eq(String columnName, Object value) {
+
 		if (isEmpty(value))
 			return this;
-		whereConditions.add(new And(propertyName, "=", value, parameters));
+
+		sql.append(" and ").append(columnName).append(" = ? ");
+		setParameters(value);
 		return this;
 	}
 
 	/** 不相等 */
-	public Query notEq(String propertyName, Object value) {
-		if (isEmpty(value)) {
+	public Query notEq(String columnName, Object value) {
+		if (isEmpty(value))
 			return this;
-		}
-		whereConditions.add(new And(propertyName, "!=", value, parameters));
+
+		sql.append(" and ").append(columnName).append(" <> ? ");
+		setParameters(value);
 		return this;
 	}
 
-	/** 或 */
-	public void or(List<String> propertyName, Object value) {
-		if (isEmpty(value))
-			return;
-		if ((propertyName == null) || (propertyName.size() == 0))
-			return;
-		whereConditions.add(new Or(propertyName, "=", value));
-	}
-
-	public void or(String propertyName, Object value) {
-		if (isEmpty(propertyName))
-			return;
-		if (isEmpty(value))
-			return;
-		whereConditions.add(new Or(propertyName, "=", value));
-	}
-
-	/** 空 */
-	public void isNull(String propertyName) {
-		if (isEmpty(propertyName)) {
-			return;
-		}
-	}
-
-	/** 非空 */
-	public void isNotNull(String propertyName) {
-		if (isEmpty(propertyName)) {
-			return;
-		}
-	}
-
 	/**
-	 * not in
+	 * 不加单引号
 	 * 
-	 * @param propertyName
-	 *            属性名称
+	 * @param columnName
 	 * @param value
-	 *            值集合
+	 * @return
+	 * @return Query
+	 * @Author 杨健/YangJian
+	 * @Date 2015年7月19日 下午2:52:52
+	 * @Version 1.0.0
 	 */
-	public void notIn(String propertyName, Collection<?> value) {
-		if ((value == null) || (value.size() == 0)) {
-			return;
-		}
-	}
-
-	/**
-	 * 模糊匹配
-	 * 
-	 * @param propertyName
-	 *            属性名称
-	 * @param value
-	 *            属性值
-	 */
-	public void like(String propertyName, String value) {
-		if (isEmpty(value))
-			return;
-		if (value.indexOf("%") < 0)
-			value = StringUtils.join("'%" , value , "%'");
-		whereConditions.add(new And(propertyName, "like", value, parameters));
-	}
-
-	/**
-	 * 时间区间查询
-	 * 
-	 * @param propertyName
-	 *            属性名称
-	 * @param lo
-	 *            属性起始值
-	 * @param go
-	 *            属性结束值
-	 */
-	public void between(String propertyName, Date lo, Date go) {
-		if (isNotEmpty(lo) && isNotEmpty(go)) {
-			return;
-		}
-
-		if (isNotEmpty(lo) && isEmpty(go)) {
-			return;
-		}
-
-		if (isNotEmpty(go)) {
-		}
-
-	}
-
-	public void between(String propertyName, Number lo, Number go) {
-		if (!(isEmpty(lo)))
-			ge(propertyName, lo);
-
-		if (!(isEmpty(go)))
-			le(propertyName, go);
-	}
-
-	/**
-	 * 小于等于
-	 * 
-	 * @param propertyName
-	 *            属性名称
-	 * @param value
-	 *            属性值
-	 */
-	public void le(String propertyName, Number value) {
-		if (isEmpty(value)) {
-			return;
-		}
-	}
-
-	/**
-	 * 小于
-	 * 
-	 * @param propertyName
-	 *            属性名称
-	 * @param value
-	 *            属性值
-	 */
-	public void lt(String propertyName, Number value) {
-		if (isEmpty(value)) {
-			return;
-		}
-	}
-
-	/**
-	 * 大于等于
-	 * 
-	 * @param propertyName
-	 *            属性名称
-	 * @param value
-	 *            属性值
-	 */
-	public void ge(String propertyName, Number value) {
-		if (isEmpty(value)) {
-			return;
-		}
-	}
-
-	/**
-	 * 大于
-	 * 
-	 * @param propertyName
-	 *            属性名称
-	 * @param value
-	 *            属性值
-	 */
-	public void gt(String propertyName, Number value) {
-		if (isEmpty(value)) {
-			return;
-		}
+	public Query in(String columnName, Object value) {
+		return in(columnName, value, false);
 	}
 
 	/**
 	 * in
 	 * 
-	 * @param propertyName
+	 * @param sql
+	 * @param columnName
+	 * @param value
+	 *            "WallLatticeStatus_2", "WallLatticeStatus_1" 或 Lists.newArrayList("WallLatticeStatus_2",
+	 *            "WallLatticeStatus_1");
+	 * @param isQuotationMark
+	 *            是否需要引号
+	 * @return Query
+	 * @Author 杨健/YangJian
+	 * @Date 2015年7月15日 下午5:22:49
+	 * @Version 1.0.0
+	 */
+	public Query in(String columnName, Object value, boolean isQuotationMark) {
+		if (isEmpty(value))
+			return this;
+
+		String quotationMark = isQuotationMark == true ? "'" : "";
+		if (value instanceof Collection<?>) {
+			value = StrUtil.strAppend(Joiner.on(",").skipNulls().join((Collection<?>) value), ",", quotationMark);
+		} else {
+			value = StringUtils.join(quotationMark, value, quotationMark);
+		}
+
+		if (isEmpty(value) || "null".equals(value))
+			return this;
+
+		sql.append(" and ").append(columnName).append(" in ( ").append(value).append(" )");
+		return this;
+	}
+
+	/**
+	 * not in
+	 * 
+	 * @param columnName
 	 *            属性名称
 	 * @param value
 	 *            值集合
+	 * @param isQuotationMark
+	 *            是否需要引号
+	 * @return
 	 */
-	public void in(String propertyName, Collection<?> value) {
-		if ((value == null) || (value.size() == 0)) {
+	public Query notIn(String columnName, Object value, boolean isQuotationMark) {
+		if (isEmpty(value))
+			return this;
+
+		String quotationMark = isQuotationMark == true ? "'" : "";
+		if (value instanceof Collection<?>) {
+			value = StrUtil.strAppend(Joiner.on(",").skipNulls().join((Collection<?>) value), ",", quotationMark);
+		} else {
+			value = StringUtils.join(quotationMark, value, quotationMark);
+		}
+
+		if (isEmpty(value) || "null".equals(value))
+			return this;
+
+		sql.append(" and ").append(columnName).append(" not in ( ").append(value).append(" )");
+		return this;
+	}
+
+	/** 空 */
+	public Query isNull(String columnName) {
+		if (isEmpty(columnName))
+			return this;
+
+		sql.append(" and ").append(columnName).append(" is null ");
+		return this;
+	}
+
+	/** 非空 */
+	public Query isNotNull(String columnName) {
+		if (isEmpty(columnName))
+			return this;
+
+		sql.append(" and ").append(columnName).append(" is not null ");
+		return this;
+	}
+
+	public Query or(String columnName, Object value) {
+		if (isEmpty(columnName))
+			return this;
+		if (isEmpty(value))
+			return this;
+		sql.append(" or ").append(columnName).append(" = ? ");
+		setParameters(value);
+		return this;
+	}
+
+	/**
+	 * 模糊匹配
+	 * 
+	 * @param columnName
+	 *            属性名称
+	 * @param value
+	 *            属性值
+	 */
+	public Query like(String columnName, String value) {
+		if (isEmpty(value))
+			return this;
+		if (value.indexOf("%") < 0)
+			value = StringUtils.join("'%", value, "%'");
+
+		sql.append(" and ").append(columnName).append(" like ").append(value);
+		return this;
+	}
+
+	/**
+	 * 时间区间查询
+	 * 
+	 * @param columnName
+	 *            属性名称
+	 * @param lo
+	 *            日期属性起始值
+	 * @param go
+	 *            日期属性结束值
+	 * @return
+	 */
+	public Query between(String columnName, String lo, String go) {
+		if (isNotEmpty(lo) && isNotEmpty(go)) {
+			return this;
+		}
+
+		if (isNotEmpty(lo) && isEmpty(go)) {
+			sql.append(" and ").append(columnName).append(" >= ? ");
+			setParameters(lo);
+			return this;
+		}
+
+		if (isEmpty(lo) && isNotEmpty(go)) {
+			sql.append(" and ").append(columnName).append(" <= ? ");
+			setParameters(go);
+			return this;
+		}
+
+		sql.append(" between ? and ? ");
+		setParameters(lo);
+		setParameters(go);
+		return this;
+	}
+
+	public Query between(String columnName, Number lo, Number go) {
+		if (isNotEmpty(lo))
+			ge(columnName, lo);
+
+		if (isNotEmpty(go))
+			le(columnName, go);
+
+		return this;
+	}
+
+	/**
+	 * 小于等于
+	 * 
+	 * @param columnName
+	 *            属性名称
+	 * @param value
+	 *            属性值
+	 */
+	public Query le(String columnName, Number value) {
+		if (isEmpty(value)) {
+			return this;
+		}
+		sql.append(" and ").append(columnName).append(" <= ? ");
+		setParameters(value);
+		return this;
+	}
+
+	/**
+	 * 小于
+	 * 
+	 * @param columnName
+	 *            属性名称
+	 * @param value
+	 *            属性值
+	 */
+	public Query lt(String columnName, Number value) {
+		if (isEmpty(value)) {
+			return this;
+		}
+		sql.append(" and ").append(columnName).append(" < ? ");
+		setParameters(value);
+		return this;
+	}
+
+	/**
+	 * 大于等于
+	 * 
+	 * @param columnName
+	 *            属性名称
+	 * @param value
+	 *            属性值
+	 */
+	public Query ge(String columnName, Number value) {
+		if (isEmpty(value)) {
+			return this;
+		}
+		sql.append(" and ").append(columnName).append(" >= ? ");
+		setParameters(value);
+		return this;
+	}
+
+	/**
+	 * 大于
+	 * 
+	 * @param columnName
+	 *            属性名称
+	 * @param value
+	 *            属性值
+	 */
+	public Query gt(String columnName, Number value) {
+		if (isEmpty(value)) {
+			return this;
+		}
+		sql.append(" and ").append(columnName).append(" > ? ");
+		setParameters(value);
+		return this;
+	}
+
+	/**
+	 * 排序
+	 * 
+	 * @param order
+	 * @return Query
+	 * @Author 杨健/YangJian
+	 * @Date 2015年7月28日 下午3:41:43
+	 * @Version 1.0.0
+	 */
+	public Query orderBy(OrderBy order) {
+		if (isEmpty(order)) {
+			return this;
+		}
+		this.orders.add(order);
+		return this;
+	}
+
+	public Query limit(int start, int limit) {
+		sql.append(" limit ? offset ? ");
+		parameters.add(limit);
+		parameters.add(start);
+		return this;
+	}
+
+	/** 排序 */
+	private void appendOrderBy() {
+		if (isEmpty(orders)) {
 			return;
+		}
+		sql.append(" order by ");
+
+		int size = orders.size();
+
+		for (int i = 0; i < size; i++) {
+			sql.append(orders.get(i).toString());
+			if (i < size - 1) {
+				sql.append(",");
+			}
 		}
 	}
 
-	public List<Condition> getWhereConditions() {
-		return whereConditions;
+	public static <T> BeanHandler<T> getBeanHandler(Class<T> clazz) {
+		RowProcessor rowProcessor = new BasicRowProcessor(new GenerousBeanProcessor());
+		BeanHandler<T> bh = new BeanHandler<T>(clazz, rowProcessor);
+		return bh;
+	}
+
+	public static <T> BeanListHandler<T> getBeanListHandler(Class<T> clazz) {
+		RowProcessor rowProcessor = new BasicRowProcessor(new GenerousBeanProcessor());
+		BeanListHandler<T> bh = new BeanListHandler<T>(clazz, rowProcessor);
+		return bh;
+	}
+
+	public Long getCount() throws SQLException {
+		if (isEmpty(sql)) {
+			return null;
+		}
+		ScalarHandler<Long> handler = new ScalarHandler<Long>(1);
+		Long count = ConnectionUtils.getRunnerWithDataSource().query(sql.toString(), handler, parameters.toArray());
+		debug(count);
+		return count;
+	}
+
+	public <T> T getCount(ScalarHandler<T> sh) throws SQLException {
+		if (isEmpty(sql)) {
+			return null;
+		}
+		T count = ConnectionUtils.getRunnerWithDataSource().query(sql.toString(), sh, parameters.toArray());
+		debug(count);
+		return count;
+	}
+
+	public Map<String, Object> map() throws SQLException {
+		if (isEmpty(sql)) {
+			return null;
+		}
+		appendOrderBy();
+		Map<String, Object> map = ConnectionUtils.getRunnerWithDataSource().query(sql.toString(), new MapHandler(),
+				parameters.toArray());
+		debug(map);
+		return map;
+	}
+
+	public List<Map<String, Object>> listmap() throws SQLException {
+		if (isEmpty(sql)) {
+			return null;
+		}
+		appendOrderBy();
+		List<Map<String, Object>> map = ConnectionUtils.getRunnerWithDataSource().query(sql.toString(),
+				new MapListHandler(), parameters.toArray());
+		debug(map);
+		return map;
+	}
+
+	@SuppressWarnings("unchecked")
+	public <T> T singleResult() throws SQLException {
+		if (isEmpty(sql)) {
+			return null;
+		}
+
+		if (isEmpty(clazz)) {
+			throw new IllegalArgumentException("Not set clazz!");
+		}
+
+		BeanHandler<T> beanHandler = (BeanHandler<T>) getBeanHandler(clazz);
+		T list = ConnectionUtils.getRunnerWithDataSource().query(sql.toString(), beanHandler, parameters.toArray());
+		debug(list);
+		return list;
+	}
+
+	@SuppressWarnings("unchecked")
+	public <T> List<T> list() throws SQLException {
+		if (isEmpty(sql)) {
+			return null;
+		}
+
+		if (isEmpty(clazz)) {
+			throw new IllegalArgumentException("Not set clazz!");
+		}
+
+		appendOrderBy();
+
+		BeanListHandler<T> beanListHandler = (BeanListHandler<T>) getBeanListHandler(clazz);
+		List<T> list = ConnectionUtils.getRunnerWithDataSource().query(sql.toString(), beanListHandler,
+				parameters.toArray());
+
+		debug(list);
+		return list;
+	}
+
+	public <T> T singleResult(Class<T> clazz) throws SQLException {
+		if (isEmpty(sql)) {
+			return null;
+		}
+		BeanHandler<T> beanHandler = getBeanHandler(clazz);
+		T list = ConnectionUtils.getRunnerWithDataSource().query(sql.toString(), beanHandler, parameters.toArray());
+		debug(list);
+		return list;
+	}
+
+	public <T> List<T> list(Class<T> clazz) throws SQLException {
+		if (isEmpty(sql)) {
+			return null;
+		}
+
+		appendOrderBy();
+
+		BeanListHandler<T> beanListHandler = getBeanListHandler(clazz);
+		List<T> list = ConnectionUtils.getRunnerWithDataSource().query(sql.toString(), beanListHandler,
+				parameters.toArray());
+
+		debug(list);
+		return list;
+	}
+
+	public <T> List<T> list(ColumnListHandler<T> columnListHandler) throws SQLException {
+		if (isEmpty(sql)) {
+			return null;
+		}
+
+		appendOrderBy();
+
+		List<T> list = ConnectionUtils.getRunnerWithDataSource().query(sql.toString(), columnListHandler,
+				parameters.toArray());
+		debug(list);
+		return list;
+	}
+
+	private void debug(Object result) {
+
+		if (!isDubeg) {
+			return;
+		}
+
+		System.out.println("SQL=" + sql.toString());
+		System.out.println("SQL Parameters=" + parameters.toArray());
+		System.out.println("SQL Value=" + result);
 	}
 
 }

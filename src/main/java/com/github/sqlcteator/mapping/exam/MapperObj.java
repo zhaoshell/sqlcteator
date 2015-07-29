@@ -1,4 +1,4 @@
-package com.platform.kit.mapping.exam;
+package com.github.sqlcteator.mapping.exam;
 
 import java.io.Serializable;
 import java.util.Date;

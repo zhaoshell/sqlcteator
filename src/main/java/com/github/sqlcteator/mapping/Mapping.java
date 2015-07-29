@@ -1,4 +1,4 @@
-package com.platform.kit.mapping;
+package com.github.sqlcteator.mapping;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
@@ -11,7 +11,7 @@ import java.util.TreeMap;
 
 import org.omg.CORBA.portable.ApplicationException;
 
-import com.platform.kit.mapping.annotations.Fields;
+import com.github.sqlcteator.mapping.annotations.Fields;
 
 /**
  * @comment 转换对象将Map转换成对象或者将对象转换成另外一个对象。可用于PO到VO的相互转换<br/>
@@ -23,7 +23,7 @@ import com.platform.kit.mapping.annotations.Fields;
  *          2、public static Mapping mapping = new Mapping(new Class[]{MapperObj.class, MapperObj2.class, …………});
  *          为mapping提前注册各个需要转换的类。
  *
- * @author wangshuo
+ * @author YangJian
  * @date 2013-7-10 下午5:11:47
  * @version 1.0.1
  */
@@ -134,7 +134,7 @@ public class Mapping {
 	 * @Author wangshuo
 	 * @since 1.0.0
 	 */
-	public <E extends Serializable> E convertObject(Class<E> clazz, Object obj) {
+	public <E extends Serializable> E convertObject(Class<?> clazz, Object obj) {
 		if (clazz == null || obj == null) {
 			return null;
 		}

@@ -1,4 +1,4 @@
-package com.platform.kit.mapping;
+package com.github.sqlcteator.mapping;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -7,7 +7,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.platform.kit.mapping.exam.MapperObj;
+import org.apache.commons.lang3.StringUtils;
 
 public class MappingDb {
 
@@ -69,7 +69,7 @@ public class MappingDb {
 			keyName = objField.getKeyName();
 			if (mapUnderscoreToCamelCase) {
 				keyName = camelToUnderscore(keyName);
-				if ("".equals(keyName)) {
+				if (null == keyName || "".equals(keyName)) {
 					continue;
 				}
 			}
@@ -78,11 +78,35 @@ public class MappingDb {
 		return columns;
 	}
 
+	/**
+	 * 将对象属性转换对应的数据库字段
+	 * 
+	 * @param clazz
+	 * @return List<String>
+	 * @Author 杨健/YangJian
+	 * @Date 2015年5月7日 上午11:48:07
+	 * @Version 1.0.0
+	 */
+	public List<MappingField> getFields() {
+		List<MappingField> columns = new ArrayList<MappingField>();
+		Map<String, MappingField> map = Mapping.m.getFieldMap(this.clazz);
+		Set<String> keySet = map.keySet();
+		MappingField objField = null;
+		for (String key : keySet) {
+			objField = map.get(map.get(key).getKeyName());
+			if (!objField.isMapping()) {
+				continue;
+			}
+			columns.add(objField);
+		}
+		return columns;
+	}
+
 	public Object[] getValues() {
-		
+
 		// 被转换对象的field Map，获取属性对应的值
 		this.setMapUnderscoreToCamelCase(false);
-		
+
 		Map<String, MappingField> map = Mapping.m.getFieldMap(this.clazz);
 		List<String> columns = getColumns();
 		Object[] values = new Object[columns.size()];
@@ -99,6 +123,10 @@ public class MappingDb {
 				if (objField != null) {
 					// 获得被转化对象的该字段的值。
 					fieldValue = objField.getFieldValue(this.obj);
+					if ((fieldValue == null || "".equals(fieldValue))
+							&& (objField.isPrimaryKey() || "id".equalsIgnoreCase(key))) {
+						fieldValue = StringUtils.join("nextval ('", objField.getSequenceName(), "')");
+					}
 				}
 				values[i++] = fieldValue;
 			}
@@ -126,20 +154,13 @@ public class MappingDb {
 		Matcher matcher = pattern.matcher(param);
 		int i = 0;
 		while (matcher.find()) {
-			builder.replace(matcher.start() + i, matcher.end() + i, "_" + matcher.group().toLowerCase());
+			builder.replace(matcher.start() + i, matcher.end() + i,
+					StringUtils.join("_", matcher.group().toLowerCase()));
 			i++;
 		}
 		if ('_' == builder.charAt(0)) {
 			builder.deleteCharAt(0);
 		}
 		return builder.toString();
-	}
-
-	public static void main(String[] args) {
-		MappingDb m = new MappingDb(MapperObj.class);
-		List<String> columns = m.getColumns();
-		for (String key : columns) {
-			System.out.println(key);
-		}
 	}
 }

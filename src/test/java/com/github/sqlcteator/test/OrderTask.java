@@ -3,9 +3,6 @@ package com.github.sqlcteator.test;
 import java.io.Serializable;
 import java.util.Date;
 
-import com.platform.kit.mapping.annotations.Table;
-
-@Table(name="cp_order_task")
 public class OrderTask implements Serializable {
 
 	private static final long serialVersionUID = -9219153310444883120L;

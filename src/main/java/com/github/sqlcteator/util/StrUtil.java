@@ -2,7 +2,14 @@ package com.github.sqlcteator.util;
 
 import java.lang.reflect.Array;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.lang3.StringUtils;
+
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
+import com.google.common.collect.Lists;
 
 public class StrUtil {
 
@@ -96,5 +103,34 @@ public class StrUtil {
 			sb.append(item);
 		}
 		return sb.toString();
+	}
+	
+	/**
+	 * 字符串前后拼接给定字符，如：SO1506116511,SO1506117038 以字符"'"拼接结果：'SO1506116511','SO1506117038'
+	 * 
+	 * @param str
+	 *            原字符串
+	 * @param splitStr
+	 *            原字符串分割字符
+	 * @param appendStr
+	 *            前后拼接给定字符
+	 * @return String
+	 * @Author 杨健/YangJian
+	 * @Date 2015年6月18日 下午12:00:04
+	 * @Version 1.0.0
+	 */
+	public static String strAppend(String str, String splitStr, String appendStr) {
+		if (isEmpty(str)) {
+			return null;
+		}
+		List<String> strList = Splitter.on(splitStr).splitToList(StringUtils.replaceChars(str, appendStr, ""));
+		List<String> newStrList = Lists.newArrayList();
+		for (String s : strList) {
+			if (isEmpty(s)) {
+				continue;
+			}
+			newStrList.add(StringUtils.join(appendStr, s, appendStr));
+		}
+		return Joiner.on(splitStr).skipNulls().join(newStrList);
 	}
 }

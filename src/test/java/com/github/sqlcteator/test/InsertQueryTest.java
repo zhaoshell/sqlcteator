@@ -5,6 +5,7 @@ import java.util.Date;
 import org.junit.Test;
 
 import com.github.sqlcteator.Insert;
+import com.github.sqlcteator.Query;
 
 public class InsertQueryTest {
 	
@@ -17,7 +18,7 @@ public class InsertQueryTest {
 		orderTask.setOrderAmount(1);
 		Insert query = new Insert(orderTask,false);
 
-		String sql = query.toPrepareStatementString();
+		String sql = query.toString();
 		Insert query2 = new Insert(orderTask,true);
 		String sqlAndValue = query2.toString();
 		System.out.println(sql);
@@ -34,5 +35,14 @@ public class InsertQueryTest {
 		for (Object value : values) {
 			System.out.println(value);
 		}*/
+	}
+	
+	@Test
+	public void queryColumnsAndValues2() throws Exception {
+
+		Query sql = new Query(OrderTask.class);
+		System.out.println("===============");
+		System.out.println(sql.toString());
+		
 	}
 }

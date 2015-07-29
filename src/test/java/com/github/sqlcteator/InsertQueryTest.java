@@ -6,9 +6,9 @@ import java.util.Date;
 
 import org.junit.Test;
 
+import com.github.sqlcteator.mapping.exam.MapperObj;
+import com.github.sqlcteator.mapping.exam.MapperObj2;
 import com.github.sqlcteator.test.po.WhPickingWall;
-import com.platform.kit.mapping.exam.MapperObj;
-import com.platform.kit.mapping.exam.MapperObj2;
 
 public class InsertQueryTest {
 	private static final String NEW_LINE = System.getProperty("line.separator");
@@ -22,7 +22,7 @@ public class InsertQueryTest {
 			whPickingWall = new WhPickingWall();
 			whPickingWall.setWallNo(System.currentTimeMillis() + "");
 			query = new Insert(whPickingWall);
-			query.toPrepareStatementString();
+			query.toString();
 		}
 		long end = System.currentTimeMillis();// Instant.now().toEpochMilli();
 		System.out.println(end - start);
@@ -37,7 +37,7 @@ public class InsertQueryTest {
 		mapperObj.setName("中国");
 		Insert query = new Insert(mapperObj);
 		// When
-		String sql = query.toPrepareStatementString();
+		String sql = query.toString();
 		String sqlAndValue = query.toString();
 		System.out.println(sql);
 		System.out.println("===============");
@@ -66,7 +66,7 @@ public class InsertQueryTest {
 		// Insert query = new Insert(MapperObj.class).values(1, "foo", 30,"");
 		Insert query = new Insert(mapperObj);
 		// When
-		String sql = query.toPrepareStatementString();
+		String sql = query.toString();
 		String sqlAndValue = query.toString();
 		System.out.println(sql);
 		System.out.println("===============");

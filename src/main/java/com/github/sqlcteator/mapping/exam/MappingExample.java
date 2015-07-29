@@ -1,11 +1,11 @@
-package com.platform.kit.mapping.exam;
+package com.github.sqlcteator.mapping.exam;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.platform.kit.mapping.Mapping;
+import com.github.sqlcteator.mapping.Mapping;
 
 /**
  * @comment mapping的使用例子。
